@@ -4,58 +4,195 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Daily Attendance System</title>
+    <title>Daily Floor Attendance System</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <header>
-        <h1>Daily Attendance System</h1>
-        <p>Floor-wise Employee Attendance Report</p>
+    <!-- ================= HEADER ================= -->
+
+    <header class="top-header">
+
+        <div class="header-content">
+
+            <div>
+                <h1>Daily Attendance System</h1>
+                <p>Floor-wise Employee Attendance Management</p>
+            </div>
+
+            <div class="system-status">
+                <span class="status-dot"></span>
+                System Online
+            </div>
+
+        </div>
+
     </header>
 
-    <main>
 
-        <section class="attendance-card">
+    <!-- ================= MAIN ================= -->
 
-            <h2>Daily Attendance Report</h2>
+    <main class="container">
+
+        <!-- PAGE TITLE -->
+
+        <section class="page-heading">
+
+            <div>
+                <h2>Daily Attendance Report</h2>
+                <p>Enter today's floor-wise employee attendance.</p>
+            </div>
+
+            <div class="report-date">
+                <span>Report Date</span>
+                <strong id="displayDate">--</strong>
+            </div>
+
+        </section>
+
+
+        <!-- ================= ATTENDANCE FORM ================= -->
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <div>
+                    <h3>Attendance Entry</h3>
+                    <p>Complete the attendance information below.</p>
+                </div>
+
+            </div>
+
 
             <form id="attendanceForm">
 
-                <div class="form-group">
-                    <label for="date">Date</label>
-                    <input type="date" id="date" required>
+                <!-- DATE + FLOOR -->
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="date">
+                            Attendance Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="date"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="floor">
+                            Select Floor
+                        </label>
+
+                        <select id="floor" required>
+
+                            <option value="">
+                                Select Floor
+                            </option>
+
+                            <option value="1st Floor">
+                                1st Floor
+                            </option>
+
+                            <option value="2nd Floor">
+                                2nd Floor
+                            </option>
+
+                            <option value="3rd Floor">
+                                3rd Floor
+                            </option>
+
+                            <option value="4th Floor">
+                                4th Floor
+                            </option>
+
+                            <option value="5th Floor">
+                                5th Floor
+                            </option>
+
+                        </select>
+
+                    </div>
+
                 </div>
 
-                <div class="form-group">
-                    <label for="floor">Floor</label>
-                    <select id="floor" required>
-                        <option value="">Select Floor</option>
-                        <option value="1st Floor">1st Floor</option>
-                        <option value="2nd Floor">2nd Floor</option>
-                        <option value="3rd Floor">3rd Floor</option>
-                        <option value="4th Floor">4th Floor</option>
-                        <option value="5th Floor">5th Floor</option>
-                    </select>
+
+                <!-- INSPECTOR -->
+
+                <div class="inspector-box">
+
+                    <div class="inspector-icon">
+                        👤
+                    </div>
+
+                    <div>
+
+                        <span>Assigned Inspector</span>
+
+                        <strong id="inspectorName">
+                            Select a floor
+                        </strong>
+
+                    </div>
+
                 </div>
 
-                <div class="form-group">
-                    <label for="totalEmployees">Total Employees</label>
-                    <input
-                        type="number"
-                        id="totalEmployees"
-                        min="0"
-                        placeholder="Enter total employees"
-                        required
-                    >
+
+                <!-- TOTAL EMPLOYEES -->
+
+                <div class="total-section">
+
+                    <div class="form-group">
+
+                        <label for="totalEmployees">
+                            Total Employees
+                        </label>
+
+                        <input
+                            type="number"
+                            id="totalEmployees"
+                            min="0"
+                            placeholder="Enter today's employee count"
+                            required
+                        >
+
+                        <small>
+                            Enter the actual employee count for this floor today.
+                        </small>
+
+                    </div>
+
                 </div>
+
+
+                <!-- ATTENDANCE STATUS -->
+
+                <h4 class="section-title">
+                    Attendance Status
+                </h4>
+
 
                 <div class="attendance-grid">
 
-                    <div class="form-group">
-                        <label for="present">Present</label>
+
+                    <!-- PRESENT -->
+
+                    <div class="attendance-input present-card">
+
+                        <label for="present">
+                            Present
+                        </label>
+
                         <input
                             type="number"
                             id="present"
@@ -63,10 +200,18 @@
                             value="0"
                             required
                         >
+
                     </div>
 
-                    <div class="form-group">
-                        <label for="absent">Absent</label>
+
+                    <!-- ABSENT -->
+
+                    <div class="attendance-input absent-card">
+
+                        <label for="absent">
+                            Absent
+                        </label>
+
                         <input
                             type="number"
                             id="absent"
@@ -74,10 +219,18 @@
                             value="0"
                             required
                         >
+
                     </div>
 
-                    <div class="form-group">
-                        <label for="leave">Leave</label>
+
+                    <!-- LEAVE -->
+
+                    <div class="attendance-input leave-card">
+
+                        <label for="leave">
+                            Leave
+                        </label>
+
                         <input
                             type="number"
                             id="leave"
@@ -85,10 +238,18 @@
                             value="0"
                             required
                         >
+
                     </div>
 
-                    <div class="form-group">
-                        <label for="dayOff">Day Off</label>
+
+                    <!-- DAY OFF -->
+
+                    <div class="attendance-input dayoff-card">
+
+                        <label for="dayOff">
+                            Day Off
+                        </label>
+
                         <input
                             type="number"
                             id="dayOff"
@@ -96,75 +257,118 @@
                             value="0"
                             required
                         >
+
                     </div>
 
                 </div>
 
-                <div class="form-group">
-                    <label for="inspector">Inspector Name</label>
-                    <input
-                        type="text"
-                        id="inspector"
-                        placeholder="Enter inspector name"
-                        required
-                    >
+
+                <!-- VALIDATION -->
+
+                <div
+                    id="validationMessage"
+                    class="validation-message"
+                ></div>
+
+
+                <!-- LIVE SUMMARY -->
+
+                <div class="live-summary">
+
+                    <div>
+                        <span>Total</span>
+                        <strong id="summaryTotal">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Present</span>
+                        <strong id="summaryPresent">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Absent</span>
+                        <strong id="summaryAbsent">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Leave</span>
+                        <strong id="summaryLeave">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Day Off</span>
+                        <strong id="summaryDayOff">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Present Rate</span>
+                        <strong id="attendanceRate">
+                            0%
+                        </strong>
+                    </div>
+
                 </div>
 
-                <div class="form-group">
-                    <label for="remarks">Remarks</label>
+
+                <!-- REMARKS -->
+
+                <div class="form-group remarks-group">
+
+                    <label for="remarks">
+                        Remarks
+                        <span>Optional</span>
+                    </label>
+
                     <textarea
                         id="remarks"
-                        rows="3"
-                        placeholder="Optional remarks"
+                        rows="4"
+                        placeholder="Enter any important remarks..."
                     ></textarea>
+
                 </div>
 
-                <div id="validationMessage"></div>
 
-                <button type="submit">
-                    Submit Attendance
-                </button>
+                <!-- SUBMIT -->
+
+                <div class="form-actions">
+
+                    <button
+                        type="reset"
+                        class="reset-btn"
+                    >
+                        Clear
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="submit-btn"
+                    >
+                        Submit Attendance
+                    </button>
+
+                </div>
 
             </form>
 
         </section>
 
 
-        <section class="summary-card">
+        <!-- ================= INFORMATION ================= -->
 
-            <h2>Attendance Summary</h2>
+        <section class="info-card">
 
-            <div class="summary-grid">
+            <div class="info-icon">
+                ℹ
+            </div>
 
-                <div class="summary-box">
-                    <span>Total Employees</span>
-                    <strong id="summaryTotal">0</strong>
-                </div>
+            <div>
 
-                <div class="summary-box">
-                    <span>Present</span>
-                    <strong id="summaryPresent">0</strong>
-                </div>
+                <strong>Attendance Validation</strong>
 
-                <div class="summary-box">
-                    <span>Absent</span>
-                    <strong id="summaryAbsent">0</strong>
-                </div>
-
-                <div class="summary-box">
-                    <span>Leave</span>
-                    <strong id="summaryLeave">0</strong>
-                </div>
-
-                <div class="summary-box">
-                    <span>Day Off</span>
-                    <strong id="summaryDayOff">0</strong>
-                </div>
-
-                <div class="summary-box">
-                    <span>Attendance Rate</span>
-                    <strong id="attendanceRate">0%</strong>
-                </div>
+                <p>
+                    Present + Absent + Leave + Day Off must equal
+                    Total Employees before the report can be submitted.
+                </p>
 
             </div>
 
@@ -173,8 +377,18 @@
     </main>
 
 
+    <!-- ================= FOOTER ================= -->
+
     <footer>
-        <p>Daily Attendance Management System</p>
+
+        <p>
+            Daily Floor Attendance System
+        </p>
+
+        <span>
+            HR Management & Attendance
+        </span>
+
     </footer>
 
 

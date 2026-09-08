@@ -521,44 +521,39 @@ form.addEventListener(
 );
 
 
-/* ================= FORM RESET ================= */
+/* ================= CLEAR BUTTON ================= */
 
-form.addEventListener(
+const clearButton =
+    document.getElementById("clearButton");
 
-    "reset",
-
+clearButton.addEventListener(
+    "click",
     function () {
 
-        setTimeout(
+        // Clear all form fields
+        form.reset();
 
-            function () {
+        // Restore today's date
+        dateInput.value = getTodayDate();
 
-                dateInput.value =
-                    getTodayDate();
+        // Clear floor
+        floorInput.value = "";
 
-                floorInput.value =
-                    "";
+        // Reset inspector
+        inspectorName.textContent =
+            "Select a floor";
 
-                inspectorName.textContent =
-                    "Select a floor";
+        // Clear validation message
+        validationMessage.textContent = "";
 
-                validationMessage.textContent =
-                    "";
+        // Update date display
+        updateDisplayDate();
 
-                updateDisplayDate();
-
-                updateSummary();
-
-            },
-
-            0
-
-        );
+        // Update summary
+        updateSummary();
 
     }
-
 );
-
 
 /* ================= INITIAL SUMMARY ================= */
 

@@ -1,186 +1,565 @@
-// ==========================================
-// Daily Attendance System
-// JavaScript Functionality
-// ==========================================
+/* =========================================================
+   DAILY FLOOR ATTENDANCE SYSTEM
+   Main JavaScript Logic
+   ========================================================= */
 
-const attendanceForm = document.getElementById("attendanceForm");
 
-// Input fields
-const totalEmployees = document.getElementById("totalEmployees");
-const present = document.getElementById("present");
-const absent = document.getElementById("absent");
-const leave = document.getElementById("leave");
-const dayOff = document.getElementById("dayOff");
+/* ================= FLOOR → INSPECTOR MAPPING ================= */
 
-// Summary fields
-const summaryTotal = document.getElementById("summaryTotal");
-const summaryPresent = document.getElementById("summaryPresent");
-const summaryAbsent = document.getElementById("summaryAbsent");
-const summaryLeave = document.getElementById("summaryLeave");
-const summaryDayOff = document.getElementById("summaryDayOff");
-const attendanceRate = document.getElementById("attendanceRate");
+/*
+   Temporary configuration.
+
+   Later this information will come from the database.
+   HR will be able to manage floors and inspectors
+   without changing this JavaScript file.
+*/
+
+const floorInspectors = {
+
+    "1st Floor": "Inspector A",
+
+    "2nd Floor": "Inspector B",
+
+    "3rd Floor": "Inspector C",
+
+    "4th Floor": "Inspector D",
+
+    "5th Floor": "Inspector E"
+
+};
+
+
+/* ================= ELEMENTS ================= */
+
+const form = document.getElementById("attendanceForm");
+
+const dateInput = document.getElementById("date");
+
+const floorInput = document.getElementById("floor");
+
+const totalEmployeesInput =
+    document.getElementById("totalEmployees");
+
+const presentInput =
+    document.getElementById("present");
+
+const absentInput =
+    document.getElementById("absent");
+
+const leaveInput =
+    document.getElementById("leave");
+
+const dayOffInput =
+    document.getElementById("dayOff");
+
+const remarksInput =
+    document.getElementById("remarks");
+
+const inspectorName =
+    document.getElementById("inspectorName");
+
+const displayDate =
+    document.getElementById("displayDate");
 
 const validationMessage =
     document.getElementById("validationMessage");
 
-// ==========================================
-// Set today's date automatically
-// ==========================================
 
-const dateInput = document.getElementById("date");
+/* ================= SUMMARY ELEMENTS ================= */
 
-const today = new Date();
+const summaryTotal =
+    document.getElementById("summaryTotal");
 
-const year = today.getFullYear();
-const month = String(today.getMonth() + 1).padStart(2, "0");
-const day = String(today.getDate()).padStart(2, "0");
+const summaryPresent =
+    document.getElementById("summaryPresent");
 
-dateInput.value = `${year}-${month}-${day}`;
+const summaryAbsent =
+    document.getElementById("summaryAbsent");
 
-// ==========================================
-// Get attendance values
-// ==========================================
+const summaryLeave =
+    document.getElementById("summaryLeave");
 
-function getAttendanceValues() {
+const summaryDayOff =
+    document.getElementById("summaryDayOff");
 
-    return {
-        total: Number(totalEmployees.value) || 0,
-        present: Number(present.value) || 0,
-        absent: Number(absent.value) || 0,
-        leave: Number(leave.value) || 0,
-        dayOff: Number(dayOff.value) || 0
-    };
+const attendanceRate =
+    document.getElementById("attendanceRate");
+
+
+/* ================= TODAY'S DATE ================= */
+
+function getTodayDate() {
+
+    const today = new Date();
+
+    const year = today.getFullYear();
+
+    const month =
+        String(today.getMonth() + 1).padStart(2, "0");
+
+    const day =
+        String(today.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
 }
 
-// ==========================================
-// Update summary
-// ==========================================
 
-function updateSummary() {
+/* Set today's date */
 
-    const data = getAttendanceValues();
+const today = getTodayDate();
 
-    summaryTotal.textContent = data.total;
-    summaryPresent.textContent = data.present;
-    summaryAbsent.textContent = data.absent;
-    summaryLeave.textContent = data.leave;
-    summaryDayOff.textContent = data.dayOff;
+dateInput.value = today;
 
-    if (data.total > 0) {
 
-        const rate = (data.present / data.total) * 100;
+/* ================= DISPLAY DATE ================= */
 
-        attendanceRate.textContent =
-            `${rate.toFixed(2)}%`;
+function updateDisplayDate() {
 
-    } else {
+    if (!dateInput.value) {
 
-        attendanceRate.textContent = "0%";
-    }
-
-    validateAttendance();
-}
-
-// ==========================================
-// Validate attendance
-// ==========================================
-
-function validateAttendance() {
-
-    const data = getAttendanceValues();
-
-    const statusTotal =
-        data.present +
-        data.absent +
-        data.leave +
-        data.dayOff;
-
-    if (data.total === 0) {
-
-        validationMessage.textContent = "";
-        return false;
-    }
-
-    if (statusTotal === data.total) {
-
-        validationMessage.textContent =
-            "✓ Attendance count is correct.";
-
-        validationMessage.style.color = "green";
-
-        return true;
-
-    } else {
-
-        validationMessage.textContent =
-            `✗ Status total (${statusTotal}) does not match total employees (${data.total}).`;
-
-        validationMessage.style.color = "red";
-
-        return false;
-    }
-}
-
-// ==========================================
-// Listen for changes
-// ==========================================
-
-const attendanceInputs = [
-    totalEmployees,
-    present,
-    absent,
-    leave,
-    dayOff
-];
-
-attendanceInputs.forEach(input => {
-
-    input.addEventListener("input", updateSummary);
-
-});
-
-// ==========================================
-// Form submission
-// ==========================================
-
-attendanceForm.addEventListener("submit", function(event) {
-
-    event.preventDefault();
-
-    const data = getAttendanceValues();
-
-    const isValid = validateAttendance();
-
-    if (!isValid) {
-
-        alert(
-            "Please check the attendance numbers. " +
-            "Present + Absent + Leave + Day Off " +
-            "must equal Total Employees."
-        );
+        displayDate.textContent = "--";
 
         return;
     }
 
-    const floor =
-        document.getElementById("floor").value;
-
-    const inspector =
-        document.getElementById("inspector").value;
-
-    const reportDate =
-        document.getElementById("date").value;
-
-    alert(
-        `Attendance submitted successfully!\n\n` +
-        `Date: ${reportDate}\n` +
-        `Floor: ${floor}\n` +
-        `Total Employees: ${data.total}\n` +
-        `Present: ${data.present}\n` +
-        `Absent: ${data.absent}\n` +
-        `Leave: ${data.leave}\n` +
-        `Day Off: ${data.dayOff}\n` +
-        `Inspector: ${inspector}`
+    const date = new Date(
+        dateInput.value + "T00:00:00"
     );
 
-});
+    const formattedDate =
+        date.toLocaleDateString("en-GB", {
+
+            day: "2-digit",
+
+            month: "short",
+
+            year: "numeric"
+
+        });
+
+    displayDate.textContent = formattedDate;
+}
+
+
+/* Initial date display */
+
+updateDisplayDate();
+
+
+/* Update when date changes */
+
+dateInput.addEventListener(
+    "change",
+    updateDisplayDate
+);
+
+
+/* ================= FLOOR → INSPECTOR ================= */
+
+floorInput.addEventListener(
+    "change",
+    function () {
+
+        const selectedFloor =
+            floorInput.value;
+
+        if (!selectedFloor) {
+
+            inspectorName.textContent =
+                "Select a floor";
+
+            return;
+        }
+
+
+        const assignedInspector =
+            floorInspectors[selectedFloor];
+
+
+        if (assignedInspector) {
+
+            inspectorName.textContent =
+                assignedInspector;
+
+        } else {
+
+            inspectorName.textContent =
+                "Inspector not assigned";
+
+        }
+
+    }
+);
+
+
+/* ================= GET VALUES ================= */
+
+function getAttendanceValues() {
+
+    const total =
+        Number(totalEmployeesInput.value) || 0;
+
+    const present =
+        Number(presentInput.value) || 0;
+
+    const absent =
+        Number(absentInput.value) || 0;
+
+    const leave =
+        Number(leaveInput.value) || 0;
+
+    const dayOff =
+        Number(dayOffInput.value) || 0;
+
+
+    return {
+
+        total,
+        present,
+        absent,
+        leave,
+        dayOff
+
+    };
+
+}
+
+
+/* ================= UPDATE SUMMARY ================= */
+
+function updateSummary() {
+
+    const {
+
+        total,
+        present,
+        absent,
+        leave,
+        dayOff
+
+    } = getAttendanceValues();
+
+
+    /* Numbers */
+
+    summaryTotal.textContent =
+        total;
+
+    summaryPresent.textContent =
+        present;
+
+    summaryAbsent.textContent =
+        absent;
+
+    summaryLeave.textContent =
+        leave;
+
+    summaryDayOff.textContent =
+        dayOff;
+
+
+    /* Attendance percentage */
+
+    if (total > 0) {
+
+        const percentage =
+            (present / total) * 100;
+
+        attendanceRate.textContent =
+            percentage.toFixed(2) + "%";
+
+    } else {
+
+        attendanceRate.textContent =
+            "0%";
+
+    }
+
+}
+
+
+/* ================= VALIDATION ================= */
+
+function validateAttendance() {
+
+    const {
+
+        total,
+        present,
+        absent,
+        leave,
+        dayOff
+
+    } = getAttendanceValues();
+
+
+    const calculatedTotal =
+        present +
+        absent +
+        leave +
+        dayOff;
+
+
+    /* No employee count */
+
+    if (total <= 0) {
+
+        validationMessage.textContent =
+            "Please enter the total number of employees.";
+
+        validationMessage.style.color =
+            "#dc2626";
+
+        return false;
+
+    }
+
+
+    /* Negative values */
+
+    if (
+        present < 0 ||
+        absent < 0 ||
+        leave < 0 ||
+        dayOff < 0
+    ) {
+
+        validationMessage.textContent =
+            "Attendance values cannot be negative.";
+
+        validationMessage.style.color =
+            "#dc2626";
+
+        return false;
+
+    }
+
+
+    /* Attendance mismatch */
+
+    if (calculatedTotal !== total) {
+
+        validationMessage.textContent =
+            `Attendance total is ${calculatedTotal}, but Total Employees is ${total}. Please check the numbers.`;
+
+        validationMessage.style.color =
+            "#dc2626";
+
+        return false;
+
+    }
+
+
+    /* Valid */
+
+    validationMessage.textContent =
+        "Attendance numbers are valid.";
+
+    validationMessage.style.color =
+        "#16a34a";
+
+    return true;
+
+}
+
+
+/* ================= INPUT EVENTS ================= */
+
+const attendanceInputs = [
+
+    totalEmployeesInput,
+
+    presentInput,
+
+    absentInput,
+
+    leaveInput,
+
+    dayOffInput
+
+];
+
+
+attendanceInputs.forEach(
+
+    function (input) {
+
+        input.addEventListener(
+
+            "input",
+
+            function () {
+
+                updateSummary();
+
+                validateAttendance();
+
+            }
+
+        );
+
+    }
+
+);
+
+
+/* ================= FORM SUBMIT ================= */
+
+form.addEventListener(
+
+    "submit",
+
+    function (event) {
+
+        event.preventDefault();
+
+
+        /* Validate floor */
+
+        if (!floorInput.value) {
+
+            validationMessage.textContent =
+                "Please select a floor.";
+
+            validationMessage.style.color =
+                "#dc2626";
+
+            floorInput.focus();
+
+            return;
+
+        }
+
+
+        /* Validate attendance */
+
+        if (!validateAttendance()) {
+
+            return;
+
+        }
+
+
+        /* Get values */
+
+        const values =
+            getAttendanceValues();
+
+
+        const selectedFloor =
+            floorInput.value;
+
+
+        const assignedInspector =
+            floorInspectors[selectedFloor];
+
+
+        const attendancePercentage =
+            (
+                values.present /
+                values.total *
+                100
+            ).toFixed(2);
+
+
+        /*
+           Temporary submission object.
+
+           Later this exact object will be sent
+           to the backend API and PostgreSQL database.
+        */
+
+        const attendanceData = {
+
+            attendance_date:
+                dateInput.value,
+
+            floor:
+                selectedFloor,
+
+            inspector:
+                assignedInspector,
+
+            total_employees:
+                values.total,
+
+            present:
+                values.present,
+
+            absent:
+                values.absent,
+
+            leave:
+                values.leave,
+
+            day_off:
+                values.dayOff,
+
+            present_percentage:
+                attendancePercentage,
+
+            remarks:
+                remarksInput.value.trim()
+
+        };
+
+
+        /* Temporary confirmation */
+
+        console.log(
+            "Attendance Data:",
+            attendanceData
+        );
+
+
+        alert(
+            "Attendance submitted successfully!"
+        );
+
+    }
+
+);
+
+
+/* ================= FORM RESET ================= */
+
+form.addEventListener(
+
+    "reset",
+
+    function () {
+
+        setTimeout(
+
+            function () {
+
+                dateInput.value =
+                    getTodayDate();
+
+                floorInput.value =
+                    "";
+
+                inspectorName.textContent =
+                    "Select a floor";
+
+                validationMessage.textContent =
+                    "";
+
+                updateDisplayDate();
+
+                updateSummary();
+
+            },
+
+            0
+
+        );
+
+    }
+
+);
+
+
+/* ================= INITIAL SUMMARY ================= */
+
+updateSummary();

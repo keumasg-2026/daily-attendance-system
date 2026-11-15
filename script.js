@@ -27,6 +27,24 @@ const supabaseClient = window.supabase.createClient(
 console.log("Supabase client initialized successfully");
 
 
+async function testSupabaseConnection() {
+    const { data, error } = await supabaseClient
+        .from("floors")
+        .select("id, floor_name, status")
+        .order("id", { ascending: true });
+
+    if (error) {
+        console.error("Supabase connection error:", error);
+        return;
+    }
+
+    console.log("Supabase floors retrieved successfully:", data);
+}
+
+testSupabaseConnection();
+
+
+
 const floorInspectors = {
 
     "1st Floor": "Inspector A",

@@ -15,7 +15,7 @@
 */
 
  // Supabase Configuration
-const SUPABASE_URL = "https://fhrhjaluteifvuxcmgfc.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://fhrhjaluteifvuxcmgfc.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_1upuiGOZppDdTJhbaMiCQw_zrkI7UW2";
 
 // Initialize Supabase Client

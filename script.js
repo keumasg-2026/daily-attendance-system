@@ -1,24 +1,20 @@
+
 /* =========================================================
    DAILY FLOOR ATTENDANCE SYSTEM
    Main JavaScript Logic
+   Step 24G - Dynamic Supabase Data
    ========================================================= */
 
 
-/* ================= FLOOR → INSPECTOR MAPPING ================= */
+/* ================= SUPABASE CONFIGURATION ================= */
 
-/*
-   Temporary configuration.
+// Replace these placeholders with your existing Supabase values.
+// NEVER use a secret or service_role key in frontend code.
 
-   Later this information will come from the database.
-   HR will be able to manage floors and inspectors
-   without changing this JavaScript file.
-*/
-
- // Supabase Configuration
 const SUPABASE_URL = "https://fhrhjaluteifvuxcmgfc.supabase.co";
+
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_1upuiGOZppDdTJhbaMiCQw_zrkI7UW2";
 
-// Initialize Supabase Client
 const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
@@ -27,61 +23,17 @@ const supabaseClient = window.supabase.createClient(
 console.log("Supabase client initialized successfully");
 
 
-async function testSupabaseConnection() {
-    const { data, error } = await supabaseClient
-        .from("floors")
-        .select("id, floor_name, status")
-        .order("id", { ascending: true });
+/* ================= DATABASE CACHE ================= */
 
-    if (error) {
-        console.error("Supabase connection error:", error);
-        return;
-    }
+// Floor IDs and inspector IDs come from PostgreSQL.
+// We no longer use hardcoded inspector names.
 
-    console.log("Supabase floors retrieved successfully:", data);
-}
-
-testSupabaseConnection();
+let floorsData = [];
+let inspectorsData = [];
+let databaseReady = false;
 
 
-async function testInspectorsConnection() {
-    const { data, error } = await supabaseClient
-        .from("inspectors")
-        .select("id, inspector_name, floor_id, status")
-        .order("floor_id", { ascending: true });
-
-    if (error) {
-        console.error("Supabase inspectors error:", error);
-        return;
-    }
-
-    console.log(
-        "Supabase inspectors retrieved successfully:",
-        data
-    );
-}
-
-testInspectorsConnection();
-
-
-
-
-const floorInspectors = {
-
-    "1st Floor": "Inspector A",
-
-    "2nd Floor": "Inspector B",
-
-    "3rd Floor": "Inspector C",
-
-    "4th Floor": "Inspector D",
-
-    "5th Floor": "Inspector E"
-
-};
-
-
-/* ================= ELEMENTS ================= */
+/* ================= FORM ELEMENTS ================= */
 
 const form = document.getElementById("attendanceForm");
 
@@ -116,6 +68,9 @@ const displayDate =
 const validationMessage =
     document.getElementById("validationMessage");
 
+const clearButton =
+    document.getElementById("clearButton");
+
 
 /* ================= SUMMARY ELEMENTS ================= */
 
@@ -138,29 +93,35 @@ const attendanceRate =
     document.getElementById("attendanceRate");
 
 
-/* ================= TODAY'S DATE ================= */
+/* ================= BANGLADESH DATE ================= */
+
+// Always calculate today's date using Asia/Dhaka.
+// This avoids incorrect dates when users are in other timezones.
 
 function getTodayDate() {
 
-    const today = new Date();
+    const parts = new Intl.DateTimeFormat(
+        "en-GB",
+        {
+            timeZone: "Asia/Dhaka",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }
+    ).formatToParts(new Date());
 
-    const year = today.getFullYear();
+    const values = {};
 
-    const month =
-        String(today.getMonth() + 1).padStart(2, "0");
+    parts.forEach(function (part) {
+        values[part.type] = part.value;
+    });
 
-    const day =
-        String(today.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
+    return (
+        values.year + "-" +
+        values.month + "-" +
+        values.day
+    );
 }
-
-
-/* Set today's date */
-
-const today = getTodayDate();
-
-dateInput.value = today;
 
 
 /* ================= DISPLAY DATE ================= */
@@ -168,112 +129,188 @@ dateInput.value = today;
 function updateDisplayDate() {
 
     if (!dateInput.value) {
-
         displayDate.textContent = "--";
-
         return;
     }
 
     const date = new Date(
-        dateInput.value + "T00:00:00"
+        dateInput.value + "T00:00:00Z"
     );
 
-    const formattedDate =
+    displayDate.textContent =
         date.toLocaleDateString("en-GB", {
-
+            timeZone: "UTC",
             day: "2-digit",
-
             month: "short",
-
             year: "numeric"
-
         });
-
-    displayDate.textContent = formattedDate;
 }
 
 
-/* Initial date display */
+/* ================= LOAD FLOORS & INSPECTORS ================= */
 
-updateDisplayDate();
+async function loadDatabaseData() {
 
+    databaseReady = false;
 
-/* Update when date changes */
+    floorInput.disabled = true;
+    floorInput.innerHTML =
+        '<option value="">Loading floors...</option>';
 
-dateInput.addEventListener(
-    "change",
-    updateDisplayDate
-);
+    inspectorName.textContent =
+        "Loading inspector information...";
 
+    try {
 
-/* ================= FLOOR → INSPECTOR ================= */
+        // Retrieve active floors from PostgreSQL.
 
-floorInput.addEventListener(
-    "change",
-    function () {
+        const floorsResult = await supabaseClient
+            .from("floors")
+            .select("id, floor_name, status")
+            .eq("status", true)
+            .order("id", { ascending: true });
 
-        const selectedFloor =
-            floorInput.value;
-
-        if (!selectedFloor) {
-
-            inspectorName.textContent =
-                "Select a floor";
-
-            return;
+        if (floorsResult.error) {
+            throw floorsResult.error;
         }
 
+        // Retrieve active inspectors.
 
-        const assignedInspector =
-            floorInspectors[selectedFloor];
+        const inspectorsResult = await supabaseClient
+            .from("inspectors")
+            .select("id, inspector_name, floor_id, status")
+            .eq("status", true)
+            .order("floor_id", { ascending: true });
 
-
-        if (assignedInspector) {
-
-            inspectorName.textContent =
-                assignedInspector;
-
-        } else {
-
-            inspectorName.textContent =
-                "Inspector not assigned";
-
+        if (inspectorsResult.error) {
+            throw inspectorsResult.error;
         }
 
+        floorsData = floorsResult.data || [];
+        inspectorsData = inspectorsResult.data || [];
+
+        // Clear existing hardcoded dropdown options.
+
+        floorInput.innerHTML = "";
+
+        const defaultOption =
+            document.createElement("option");
+
+        defaultOption.value = "";
+        defaultOption.textContent = "Select Floor";
+
+        floorInput.appendChild(defaultOption);
+
+        // Create dropdown options using actual database IDs.
+
+        floorsData.forEach(function (floor) {
+
+            const option =
+                document.createElement("option");
+
+            option.value = String(floor.id);
+            option.textContent = floor.floor_name;
+
+            floorInput.appendChild(option);
+        });
+
+        databaseReady = true;
+        floorInput.disabled = false;
+
+        inspectorName.textContent =
+            "Select a floor";
+
+        console.log(
+            "Supabase floors retrieved successfully:",
+            floorsData
+        );
+
+        console.log(
+            "Supabase inspectors retrieved successfully:",
+            inspectorsData
+        );
+
+        if (floorsData.length === 0) {
+            floorInput.disabled = true;
+            inspectorName.textContent =
+                "No active floors available";
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Failed to load attendance configuration:",
+            error
+        );
+
+        floorInput.innerHTML =
+            '<option value="">Unable to load floors</option>';
+
+        inspectorName.textContent =
+            "Database connection failed";
+
+        validationMessage.textContent =
+            "Unable to load floor information. Please refresh the page.";
+
+        validationMessage.style.color = "#dc2626";
     }
-);
+}
 
 
-/* ================= GET VALUES ================= */
+/* ================= FIND ASSIGNED INSPECTOR ================= */
+
+function getAssignedInspector() {
+
+    const selectedFloorId =
+        Number(floorInput.value);
+
+    if (!selectedFloorId) {
+        return null;
+    }
+
+    return inspectorsData.find(function (inspector) {
+        return inspector.floor_id === selectedFloorId;
+    }) || null;
+}
+
+
+/* ================= FLOOR CHANGE EVENT ================= */
+
+floorInput.addEventListener("change", function () {
+
+    if (!floorInput.value) {
+        inspectorName.textContent =
+            "Select a floor";
+        return;
+    }
+
+    const assignedInspector =
+        getAssignedInspector();
+
+    if (assignedInspector) {
+
+        inspectorName.textContent =
+            assignedInspector.inspector_name;
+
+    } else {
+
+        inspectorName.textContent =
+            "Inspector not assigned";
+    }
+});
+
+
+/* ================= GET ATTENDANCE VALUES ================= */
 
 function getAttendanceValues() {
 
-    const total =
-        Number(totalEmployeesInput.value) || 0;
-
-    const present =
-        Number(presentInput.value) || 0;
-
-    const absent =
-        Number(absentInput.value) || 0;
-
-    const leave =
-        Number(leaveInput.value) || 0;
-
-    const dayOff =
-        Number(dayOffInput.value) || 0;
-
-
     return {
-
-        total,
-        present,
-        absent,
-        leave,
-        dayOff
-
+        total: Number(totalEmployeesInput.value) || 0,
+        present: Number(presentInput.value) || 0,
+        absent: Number(absentInput.value) || 0,
+        leave: Number(leaveInput.value) || 0,
+        dayOff: Number(dayOffInput.value) || 0
     };
-
 }
 
 
@@ -281,332 +318,309 @@ function getAttendanceValues() {
 
 function updateSummary() {
 
-    const {
+    const values = getAttendanceValues();
 
-        total,
-        present,
-        absent,
-        leave,
-        dayOff
+    summaryTotal.textContent = values.total;
 
-    } = getAttendanceValues();
+    summaryPresent.textContent = values.present;
 
+    summaryAbsent.textContent = values.absent;
 
-    /* Numbers */
+    summaryLeave.textContent = values.leave;
 
-    summaryTotal.textContent =
-        total;
+    summaryDayOff.textContent = values.dayOff;
 
-    summaryPresent.textContent =
-        present;
-
-    summaryAbsent.textContent =
-        absent;
-
-    summaryLeave.textContent =
-        leave;
-
-    summaryDayOff.textContent =
-        dayOff;
-
-
-    /* Attendance percentage */
-
-    if (total > 0) {
+    if (values.total > 0) {
 
         const percentage =
-            (present / total) * 100;
+            (values.present / values.total) * 100;
 
         attendanceRate.textContent =
             percentage.toFixed(2) + "%";
 
     } else {
 
-        attendanceRate.textContent =
-            "0%";
-
+        attendanceRate.textContent = "0%";
     }
-
 }
 
 
 /* ================= VALIDATION ================= */
 
+function showValidationMessage(message, color) {
+
+    validationMessage.textContent = message;
+    validationMessage.style.color = color;
+}
+
+
 function validateAttendance() {
 
-    const {
+    const values = getAttendanceValues();
 
-        total,
-        present,
-        absent,
-        leave,
-        dayOff
+    const fields = [
+        totalEmployeesInput,
+        presentInput,
+        absentInput,
+        leaveInput,
+        dayOffInput
+    ];
 
-    } = getAttendanceValues();
+    // Every attendance number must be provided.
 
+    if (fields.some(function (field) {
+        return field.value.trim() === "";
+    })) {
+
+        showValidationMessage(
+            "Please complete all attendance fields.",
+            "#dc2626"
+        );
+
+        return false;
+    }
+
+    const numbers = [
+        values.total,
+        values.present,
+        values.absent,
+        values.leave,
+        values.dayOff
+    ];
+
+    // Only non-negative whole numbers are accepted.
+
+    if (numbers.some(function (number) {
+        return !Number.isSafeInteger(number) || number < 0;
+    })) {
+
+        showValidationMessage(
+            "Attendance values must be non-negative whole numbers.",
+            "#dc2626"
+        );
+
+        return false;
+    }
+
+    if (values.total <= 0) {
+
+        showValidationMessage(
+            "Please enter a total employee count greater than zero.",
+            "#dc2626"
+        );
+
+        return false;
+    }
 
     const calculatedTotal =
-        present +
-        absent +
-        leave +
-        dayOff;
+        values.present +
+        values.absent +
+        values.leave +
+        values.dayOff;
 
+    if (calculatedTotal !== values.total) {
 
-    /* No employee count */
-
-    if (total <= 0) {
-
-        validationMessage.textContent =
-            "Please enter the total number of employees.";
-
-        validationMessage.style.color =
-            "#dc2626";
-
-        return false;
-
-    }
-
-
-    /* Negative values */
-
-    if (
-        present < 0 ||
-        absent < 0 ||
-        leave < 0 ||
-        dayOff < 0
-    ) {
-
-        validationMessage.textContent =
-            "Attendance values cannot be negative.";
-
-        validationMessage.style.color =
-            "#dc2626";
+        showValidationMessage(
+            "Attendance total is " +
+            calculatedTotal +
+            ", but Total Employees is " +
+            values.total +
+            ". Please check the numbers.",
+            "#dc2626"
+        );
 
         return false;
-
     }
 
-
-    /* Attendance mismatch */
-
-    if (calculatedTotal !== total) {
-
-        validationMessage.textContent =
-            `Attendance total is ${calculatedTotal}, but Total Employees is ${total}. Please check the numbers.`;
-
-        validationMessage.style.color =
-            "#dc2626";
-
-        return false;
-
-    }
-
-
-    /* Valid */
-
-    validationMessage.textContent =
-        "Attendance numbers are valid.";
-
-    validationMessage.style.color =
-        "#16a34a";
+    showValidationMessage(
+        "Attendance numbers are valid.",
+        "#16a34a"
+    );
 
     return true;
-
 }
 
 
 /* ================= INPUT EVENTS ================= */
 
 const attendanceInputs = [
-
     totalEmployeesInput,
-
     presentInput,
-
     absentInput,
-
     leaveInput,
-
     dayOffInput
-
 ];
 
+attendanceInputs.forEach(function (input) {
 
-attendanceInputs.forEach(
+    input.addEventListener("input", function () {
 
-    function (input) {
+        updateSummary();
+        validateAttendance();
+    });
+});
 
-        input.addEventListener(
 
-            "input",
+/* ================= FORM SUBMISSION ================= */
 
-            function () {
+form.addEventListener("submit", function (event) {
 
-                updateSummary();
+    event.preventDefault();
 
-                validateAttendance();
+    // Database configuration must be loaded first.
 
-            }
+    if (!databaseReady) {
 
+        showValidationMessage(
+            "Floor information is not ready. Please refresh the page.",
+            "#dc2626"
         );
 
+        return;
     }
 
-);
+    // Validate date.
 
+    if (!dateInput.value) {
 
-/* ================= FORM SUBMIT ================= */
-
-form.addEventListener(
-
-    "submit",
-
-    function (event) {
-
-        event.preventDefault();
-
-
-        /* Validate floor */
-
-        if (!floorInput.value) {
-
-            validationMessage.textContent =
-                "Please select a floor.";
-
-            validationMessage.style.color =
-                "#dc2626";
-
-            floorInput.focus();
-
-            return;
-
-        }
-
-
-        /* Validate attendance */
-
-        if (!validateAttendance()) {
-
-            return;
-
-        }
-
-
-        /* Get values */
-
-        const values =
-            getAttendanceValues();
-
-
-        const selectedFloor =
-            floorInput.value;
-
-
-        const assignedInspector =
-            floorInspectors[selectedFloor];
-
-
-        const attendancePercentage =
-            (
-                values.present /
-                values.total *
-                100
-            ).toFixed(2);
-
-
-        /*
-           Temporary submission object.
-
-           Later this exact object will be sent
-           to the backend API and PostgreSQL database.
-        */
-
-        const attendanceData = {
-
-            attendance_date:
-                dateInput.value,
-
-            floor:
-                selectedFloor,
-
-            inspector:
-                assignedInspector,
-
-            total_employees:
-                values.total,
-
-            present:
-                values.present,
-
-            absent:
-                values.absent,
-
-            leave:
-                values.leave,
-
-            day_off:
-                values.dayOff,
-
-            present_percentage:
-                attendancePercentage,
-
-            remarks:
-                remarksInput.value.trim()
-
-        };
-
-
-        /* Temporary confirmation */
-
-        console.log(
-            "Attendance Data:",
-            attendanceData
+        showValidationMessage(
+            "Please select an attendance date.",
+            "#dc2626"
         );
 
-
-        alert(
-            "Attendance submitted successfully!"
-        );
-
+        dateInput.focus();
+        return;
     }
 
-);
+    // Validate floor.
+
+    if (!floorInput.value) {
+
+        showValidationMessage(
+            "Please select a floor.",
+            "#dc2626"
+        );
+
+        floorInput.focus();
+        return;
+    }
+
+    // Validate inspector.
+
+    const assignedInspector =
+        getAssignedInspector();
+
+    if (!assignedInspector) {
+
+        showValidationMessage(
+            "No active inspector is assigned to this floor.",
+            "#dc2626"
+        );
+
+        return;
+    }
+
+    // Validate attendance numbers.
+
+    if (!validateAttendance()) {
+        return;
+    }
+
+    const values = getAttendanceValues();
+
+    const attendancePercentage =
+        (values.present / values.total) * 100;
+
+    // Prepared for future authenticated submission.
+    // This object is NOT inserted into Supabase yet.
+
+    const attendanceData = {
+
+        attendance_date: dateInput.value,
+
+        floor_id: Number(floorInput.value),
+
+        inspector_id: assignedInspector.id,
+
+        total_employees: values.total,
+
+        present: values.present,
+
+        absent: values.absent,
+
+        leave: values.leave,
+
+        day_off: values.dayOff,
+
+        remarks: remarksInput.value.trim()
+    };
+
+    console.log(
+        "Attendance preview (not saved):",
+        attendanceData
+    );
+
+    console.log(
+        "Calculated present percentage:",
+        attendancePercentage.toFixed(2) + "%"
+    );
+
+    showValidationMessage(
+        "Attendance validated successfully. Database submission is not enabled yet.",
+        "#16a34a"
+    );
+
+    alert(
+        "Attendance validated successfully!\n\n" +
+        "This is a preview only.\n" +
+        "The record has NOT been saved to the database."
+    );
+});
 
 
 /* ================= CLEAR BUTTON ================= */
 
-const clearButton =
-    document.getElementById("clearButton");
+clearButton.addEventListener("click", function () {
 
-clearButton.addEventListener(
-    "click",
-    function () {
+    // Clear all form fields.
 
-        // Clear all form fields
-        form.reset();
+    form.reset();
 
-        // Restore today's date
-        dateInput.value = getTodayDate();
+    // Restore Bangladesh's current date.
 
-        // Clear floor
-        floorInput.value = "";
+    dateInput.value = getTodayDate();
 
-        // Reset inspector
-        inspectorName.textContent =
-            "Select a floor";
+    // Reset floor and inspector.
 
-        // Clear validation message
-        validationMessage.textContent = "";
+    floorInput.value = "";
 
-        // Update date display
-        updateDisplayDate();
+    inspectorName.textContent =
+        "Select a floor";
 
-        // Update summary
-        updateSummary();
+    // Clear validation message.
 
-    }
+    validationMessage.textContent = "";
+
+    // Update date display and summary.
+
+    updateDisplayDate();
+    updateSummary();
+});
+
+
+/* ================= INITIALIZATION ================= */
+
+dateInput.value = getTodayDate();
+
+updateDisplayDate();
+
+dateInput.addEventListener(
+    "change",
+    updateDisplayDate
 );
 
-/* ================= INITIAL SUMMARY ================= */
-
 updateSummary();
+
+// Load real floors and inspectors from Supabase.
+
+loadDatabaseData();

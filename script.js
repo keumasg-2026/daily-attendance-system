@@ -44,6 +44,27 @@ async function testSupabaseConnection() {
 testSupabaseConnection();
 
 
+async function testInspectorsConnection() {
+    const { data, error } = await supabaseClient
+        .from("inspectors")
+        .select("id, inspector_name, floor_id, status")
+        .order("floor_id", { ascending: true });
+
+    if (error) {
+        console.error("Supabase inspectors error:", error);
+        return;
+    }
+
+    console.log(
+        "Supabase inspectors retrieved successfully:",
+        data
+    );
+}
+
+testInspectorsConnection();
+
+
+
 
 const floorInspectors = {
 
